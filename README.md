@@ -127,7 +127,7 @@ Please feel free to open PR here if you are able to get results for the
 **1024 x 1024** experiment. 
 
 ## Trained weights for generating cool faces :)
-Please refer to the `models/1/GAN_GEN_3.pth` for the saved weights for 
+Please refer to the `models/Celeba/1/GAN_GEN_3.pth` for the saved weights for 
 this model in PyTorch format.
 
 ## Other links
