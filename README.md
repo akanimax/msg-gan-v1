@@ -60,7 +60,7 @@ All the **3 x 3 convolution** weights have a forward hook that applies
 for the **4 x 4** layer, there is a **MinibatchStd** layer for improving 
 sample diversity. **No other stablization techniques are applied.** 
 
-<img alt="Loss Plot" src="https://raw.githubusercontent.com/akanimax/MSG-GAN/master/sourcecode/models/1/loss.png">
+<img alt="Loss Plot" src="https://raw.githubusercontent.com/akanimax/MSG-GAN/master/sourcecode/models/Celeba/1/loss.png">
 <br>
 
 The above diagram is the loss plot obtained during 
