@@ -12,6 +12,9 @@ device = th.device("cuda" if th.cuda.is_available() else "cpu")
 # enable fast training
 cudnn.benchmark = True
 
+# set seed = 3
+th.manual_seed(seed=3)
+
 
 def parse_arguments():
     """
@@ -68,16 +71,21 @@ def parse_arguments():
                         default=1041,
                         help="number of logs to generate per epoch")
 
+    parser.add_argument("--num_samples", action="store", type=int,
+                        default=64,
+                        help="number of samples to generate for creating the grid" +
+                             " should be a square number preferably")
+
     parser.add_argument("--checkpoint_factor", action="store", type=int,
-                        default=3,
+                        default=1,
                         help="save model per n epochs")
 
     parser.add_argument("--g_lr", action="store", type=float,
-                        default=0.0002,
+                        default=0.0001,
                         help="learning rate for generator")
 
     parser.add_argument("--d_lr", action="store", type=float,
-                        default=0.0002,
+                        default=0.0004,
                         help="learning rate for discriminator")
 
     parser.add_argument("--use_spectral_norm", action="store", type=bool,
@@ -134,9 +142,9 @@ def main(args):
     print(tgan.dis)
 
     # create optimizer for generator:
-    gen_optim = th.optim.Adam(tgan.gen.parameters(), args.g_lr, [0, 0.9])
+    gen_optim = th.optim.Adam(tgan.gen.parameters(), args.g_lr, [0, 0.99])
 
-    dis_optim = th.optim.Adam(tgan.dis.parameters(), args.d_lr, [0, 0.9])
+    dis_optim = th.optim.Adam(tgan.dis.parameters(), args.d_lr, [0, 0.99])
 
     loss_name = args.loss_function.lower()
 
@@ -157,7 +165,7 @@ def main(args):
         checkpoint_factor=args.checkpoint_factor,
         data_percentage=args.data_percentage,
         feedback_factor=args.feedback_factor,
-        num_samples=64,
+        num_samples=args.num_samples,
         sample_dir=args.sample_dir,
         save_dir=args.model_dir,
         log_dir=args.model_dir,

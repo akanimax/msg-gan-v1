@@ -1,16 +1,16 @@
 from shutil import copy
 import os
 
-file_path = "../1/64_x_64"
+file_path = "../Celeba/3/4_x_4"
 files = os.listdir(file_path)
-factor = 4
+factor = 2
 to_dir = "reordered"
 
 count = 1
 ot_count = 1
 
-for j in range(12):
-  for k in range(7000):
+for j in range(8):
+  for k in range(9000):
     file_name = "gen" + "_" + str(j) + "_" + str(k) + ".png"
     if file_name in files:
       if ot_count % factor == 0:
