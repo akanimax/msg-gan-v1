@@ -59,9 +59,13 @@ def main(args):
     :return: None
     """
     from Teacher.TeacherGAN import Generator, TeacherGAN
+    from torch.nn import DataParallel
 
     # create a generator:
-    msg_gan_generator = Generator(depth=args.depth, latent_size=args.latent_size)
+    msg_gan_generator = Generator(depth=args.depth, latent_size=args.latent_size).to(device)
+
+    if device == th.device("cuda"):
+        msg_gan_generator = DataParallel(msg_gan_generator)
 
     if args.generator_file is not None:
         # load the weights into generator

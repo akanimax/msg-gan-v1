@@ -249,10 +249,16 @@ class TeacherGAN:
 
     def __init__(self, depth=7, latent_size=512, device=th.device("cpu")):
         """ constructor for the class """
+        from torch.nn import DataParallel
 
         # Create the Generator and the Discriminator
-        self.gen = Generator(depth, latent_size).to(device)
-        self.dis = Discriminator(depth, latent_size).to(device)
+        if device == th.device("cuda"):
+            self.gen = DataParallel(Generator(depth, latent_size).to(device))
+            self.dis = DataParallel(Discriminator(depth, latent_size).to(device))
+
+        else:
+            self.gen = Generator(depth, latent_size).to(device)
+            self.dis = Discriminator(depth, latent_size).to(device)
 
         # state of the object
         self.latent_size = latent_size
@@ -454,26 +460,3 @@ class TeacherGAN:
         # return the generator and discriminator back to eval mode
         self.gen.eval()
         self.dis.eval()
-
-
-# if __name__ == '__main__':
-#     dev = th.device("cuda" if th.cuda.is_available() else "cpu")
-#
-#     # create a generator:
-#     gen = Generator().to(dev)
-#     print(gen)
-#     noise = th.randn(1, gen.latent_size).to(dev)
-#
-#     # obtain the outputs:
-#     samps = gen(noise)
-#
-#     # for samp in samps:
-#     #     plt.imshow(samp.detach()[0].permute(1, 2, 0) / 2 + 0.5)
-#     #     plt.show()
-#
-#     dis = Discriminator().to(dev)
-#     print(dis)
-#
-#     # apply a pass over the discriminator:
-#     preds = dis(*samps)
-#     print(preds)
