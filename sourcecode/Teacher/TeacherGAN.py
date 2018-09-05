@@ -341,12 +341,10 @@ class TeacherGAN:
         """
         from torchvision.utils import save_image
         from numpy import sqrt
-
-        samples = list(map(lambda x: th.clamp((x.detach() / 2) + 0.5, min=0, max=1),
-                           samples))
-
+        
         # save the images:
         for sample, img_file in zip(samples, img_files):
+            sample = th.clamp((sample.detach() / 2) + 0.5, min=0, max=1)
             save_image(sample, img_file, nrow=int(sqrt(sample.shape[0])))
 
     def train(self, data, gen_optim, dis_optim, loss_fn,
@@ -437,8 +435,11 @@ class TeacherGAN:
                     os.makedirs(sample_dir, exist_ok=True)
                     for gen_img_file in gen_img_files:
                         os.makedirs(os.path.dirname(gen_img_file), exist_ok=True)
-
-                    self.create_grid(self.gen(fixed_input), gen_img_files)
+                        
+                    dis_optim.zero_grad()
+                    gen_optim.zero_grad()
+                    with th.no_grad():
+                        self.create_grid(self.gen(fixed_input), gen_img_files)
 
                 if i > limit:
                     break
