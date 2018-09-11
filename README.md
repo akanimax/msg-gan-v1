@@ -97,41 +97,52 @@ Running the training is actually very simple.
 Just start the training by running the `train.py` script in the `sourcecode/` 
 directory. Refer to the following parameters for tweaking for your own use:
 
-    optional arguments:
-      -h, --help            show this help message and exit
-      --generator_file GENERATOR_FILE
-                            pretrained weights file for generator
-      --discriminator_file DISCRIMINATOR_FILE
-                            pretrained_weights file for discriminator
-      --images_dir IMAGES_DIR
-                            path for the images directory
-      --sample_dir SAMPLE_DIR
-                            path for the generated samples directory
-      --model_dir MODEL_DIR
-                            path for saved models directory
-      --loss_function LOSS_FUNCTION
-                            loss function to be used: 'hinge', 'relativistic-
-                            hinge'
-      --depth DEPTH         Depth of the GAN
-      --latent_size LATENT_SIZE
-                            latent size for the generator
-      --batch_size BATCH_SIZE
-                            batch_size for training
-      --start START         starting epoch number
-      --num_epochs NUM_EPOCHS
-                            number of epochs for training
-      --feedback_factor FEEDBACK_FACTOR
-                            number of logs to generate per epoch
-      --checkpoint_factor CHECKPOINT_FACTOR
-                            save model per n epochs
-      --g_lr G_LR           learning rate for generator
-      --d_lr D_LR           learning rate for discriminator
-      --use_spectral_norm USE_SPECTRAL_NORM
-                            Whether to use spectral normalization or not
-      --data_percentage DATA_PERCENTAGE
-                            percentage of data to use
-      --num_workers NUM_WORKERS
-                            number of parallel workers for reading files
+    -h, --help            show this help message and exit
+     --generator_file GENERATOR_FILE
+                        pretrained weights file for generator
+     --discriminator_file DISCRIMINATOR_FILE
+                        pretrained_weights file for discriminator
+     --images_dir IMAGES_DIR
+                        path for the images directory
+     --sample_dir SAMPLE_DIR
+                        path for the generated samples directory
+     --model_dir MODEL_DIR
+                        path for saved models directory
+     --loss_function LOSS_FUNCTION
+                        loss function to be used: 'hinge', 'relativistic-
+                        hinge'
+     --depth DEPTH         Depth of the GAN
+     --latent_size LATENT_SIZE
+                        latent size for the generator
+     --batch_size BATCH_SIZE
+                        batch_size for training
+     --start START         starting epoch number
+     --num_epochs NUM_EPOCHS
+                        number of epochs for training
+     --feedback_factor FEEDBACK_FACTOR
+                        number of logs to generate per epoch
+     --num_samples NUM_SAMPLES
+                        number of samples to generate for creating the grid
+                        should be a square number preferably
+     --gen_dilation GEN_DILATION
+                        amount of dilation for the generator
+     --dis_dilation DIS_DILATION
+                        amount of dilation for the discriminator
+     --checkpoint_factor CHECKPOINT_FACTOR
+                        save model per n epochs
+     --g_lr G_LR           learning rate for generator
+     --d_lr D_LR           learning rate for discriminator
+     --adam_beta1 ADAM_BETA1
+                        value of beta_1 for adam optimizer
+     --adam_beta2 ADAM_BETA2
+                        value of beta_2 for adam optimizer
+     --use_spectral_norm USE_SPECTRAL_NORM
+                        Whether to use spectral normalization or not
+     --data_percentage DATA_PERCENTAGE
+                        percentage of data to use
+     --num_workers NUM_WORKERS
+                        number of parallel workers for reading files
+
 
 ## Running 1024 x 1024 architecture
 For training a network as per the ProGAN CelebaHQ experiment, 
