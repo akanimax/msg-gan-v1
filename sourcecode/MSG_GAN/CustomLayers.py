@@ -23,7 +23,7 @@ class GenInitialBlock(th.nn.Module):
         super().__init__()
 
         self.conv_1 = ConvTranspose2d(in_channels, in_channels, (4, 4), bias=True)
-        self.conv_2 = Conv2d(in_channels, in_channels, (3, 3), padding=1, bias=True)
+        self.conv_2 = Conv2d(in_channels, in_channels, (3, 3), padding=(1, 1), bias=True)
 
         # leaky_relu:
         self.lrelu = LeakyReLU(0.2)
@@ -48,7 +48,7 @@ class GenInitialBlock(th.nn.Module):
 class GenGeneralConvBlock(th.nn.Module):
     """ Module implementing a general convolutional block """
 
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, dilation=1):
         """
         constructor for the class
         :param in_channels: number of input channels to the block
@@ -59,8 +59,10 @@ class GenGeneralConvBlock(th.nn.Module):
         super().__init__()
 
         from torch.nn import Conv2d
-        self.conv_1 = Conv2d(in_channels, out_channels, (3, 3), padding=1, bias=True)
-        self.conv_2 = Conv2d(out_channels, out_channels, (3, 3), padding=1, bias=True)
+        self.conv_1 = Conv2d(in_channels, out_channels, (3, 3),
+                             dilation=dilation, padding=dilation, bias=True)
+        self.conv_2 = Conv2d(out_channels, out_channels, (3, 3),
+                             dilation=dilation, padding=dilation, bias=True)
 
         # leaky_relu:
         self.lrelu = LeakyReLU(0.2)
@@ -200,7 +202,7 @@ class DisFinalBlock(th.nn.Module):
 class DisGeneralConvBlock(th.nn.Module):
     """ General block in the discriminator  """
 
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, dilation=1):
         """
         constructor of the class
         :param in_channels: number of input channels
@@ -212,8 +214,10 @@ class DisGeneralConvBlock(th.nn.Module):
         super().__init__()
 
         # convolutional modules
-        self.conv_1 = Conv2d(in_channels, in_channels, (3, 3), padding=1, bias=True)
-        self.conv_2 = Conv2d(in_channels, out_channels, (3, 3), padding=1, bias=True)
+        self.conv_1 = Conv2d(in_channels, in_channels, (3, 3),
+                             dilation=dilation, padding=dilation, bias=True)
+        self.conv_2 = Conv2d(in_channels, out_channels, (3, 3),
+                             dilation=dilation, padding=dilation, bias=True)
         self.downSampler = AvgPool2d(2)  # downsampler
 
         # leaky_relu:

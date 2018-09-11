@@ -76,6 +76,14 @@ def parse_arguments():
                         help="number of samples to generate for creating the grid" +
                              " should be a square number preferably")
 
+    parser.add_argument("--gen_dilation", action="store", type=int,
+                        default=1,
+                        help="amount of dilation for the generator")
+
+    parser.add_argument("--dis_dilation", action="store", type=int,
+                        default=1,
+                        help="amount of dilation for the discriminator")
+
     parser.add_argument("--checkpoint_factor", action="store", type=int,
                         default=1,
                         help="save model per n epochs")
@@ -87,6 +95,14 @@ def parse_arguments():
     parser.add_argument("--d_lr", action="store", type=float,
                         default=0.0004,
                         help="learning rate for discriminator")
+
+    parser.add_argument("--adam_beta1", action="store", type=float,
+                        default=0.9,
+                        help="value of beta_1 for adam optimizer")
+
+    parser.add_argument("--adam_beta2", action="store", type=float,
+                        default=0.999,
+                        help="value of beta_2 for adam optimizer")
 
     parser.add_argument("--use_spectral_norm", action="store", type=bool,
                         default=True,
@@ -111,10 +127,11 @@ def main(args):
     :param args: parsed command line arguments
     :return: None
     """
-    from Teacher.TeacherGAN import TeacherGAN
+    from MSG_GAN.GAN import MSG_GAN
     from data_processing.DataLoader import FlatDirectoryImageDataset, \
         get_transform, get_data_loader
-    from Teacher.Losses import HingeGAN, RelativisticAverageHingeGAN
+    from MSG_GAN.Losses import HingeGAN, RelativisticAverageHingeGAN, \
+        StandardGAN, LSGAN
 
     # create a data source:
     celeba_dataset = FlatDirectoryImageDataset(
@@ -125,26 +142,33 @@ def main(args):
     data = get_data_loader(celeba_dataset, args.batch_size, args.num_workers)
 
     # create a gan from these
-    tgan = TeacherGAN(depth=args.depth, latent_size=args.latent_size, device=device)
+    msg_gan = MSG_GAN(depth=args.depth,
+                      latent_size=args.latent_size,
+                      dis_dilation=args.dis_dilation,
+                      gen_dilation=args.gen_dilation,
+                      use_spectral_norm=args.use_spectral_norm,
+                      device=device)
 
     if args.generator_file is not None:
         # load the weights into generator
-        tgan.gen.load_state_dict(th.load(args.generator_file))
+        msg_gan.gen.load_state_dict(th.load(args.generator_file))
 
     print("Generator Configuration: ")
-    print(tgan.gen)
+    print(msg_gan.gen)
 
     if args.discriminator_file is not None:
         # load the weights into discriminator
-        tgan.dis.load_state_dict(th.load(args.discriminator_file))
+        msg_gan.dis.load_state_dict(th.load(args.discriminator_file))
 
     print("Discriminator Configuration: ")
-    print(tgan.dis)
+    print(msg_gan.dis)
 
     # create optimizer for generator:
-    gen_optim = th.optim.Adam(tgan.gen.parameters(), args.g_lr, [0, 0.99])
+    gen_optim = th.optim.Adam(msg_gan.gen.parameters(), args.g_lr,
+                              [args.adam_beta1, args.adam_beta2])
 
-    dis_optim = th.optim.Adam(tgan.dis.parameters(), args.d_lr, [0, 0.99])
+    dis_optim = th.optim.Adam(msg_gan.dis.parameters(), args.d_lr,
+                              [args.adam_beta1, args.adam_beta2])
 
     loss_name = args.loss_function.lower()
 
@@ -152,15 +176,19 @@ def main(args):
         loss = HingeGAN
     elif loss_name == "relativistic-hinge":
         loss = RelativisticAverageHingeGAN
+    elif loss_name == "standard-gan":
+        loss = StandardGAN
+    elif loss_name == "lsgan":
+        loss = LSGAN
     else:
         raise Exception("Unknown loss function requested")
 
     # train the GAN
-    tgan.train(
+    msg_gan.train(
         data,
         gen_optim,
         dis_optim,
-        loss_fn=loss(device, tgan.dis),
+        loss_fn=loss(device, msg_gan.dis),
         num_epochs=args.num_epochs,
         checkpoint_factor=args.checkpoint_factor,
         data_percentage=args.data_percentage,

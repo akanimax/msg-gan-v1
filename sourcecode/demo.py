@@ -58,7 +58,7 @@ def main(args):
     :param args: parsed command line arguments
     :return: None
     """
-    from Teacher.TeacherGAN import Generator, TeacherGAN
+    from MSG_GAN.TeacherGAN import Generator, TeacherGAN
     from torch.nn import DataParallel
 
     # create a generator:

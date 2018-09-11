@@ -2,6 +2,6 @@
     The gan architecture supplies gradients to the generator
     at different scales for image Generation
 """
-import Teacher.TeacherGAN
-import Teacher.CustomLayers
-import Teacher.Losses
+from MSG_GAN import GAN
+from MSG_GAN import CustomLayers
+from MSG_GAN import Losses
