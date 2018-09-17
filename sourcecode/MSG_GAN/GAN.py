@@ -12,15 +12,17 @@ import torch as th
 class Generator(th.nn.Module):
     """ Generator of the GAN network """
 
-    def __init__(self, depth=7, latent_size=512, use_spectral_norm=True):
+    def __init__(self, depth=7, latent_size=512, dilation=1, use_spectral_norm=True):
         """
         constructor for the Generator class
         :param depth: required depth of the Network
         :param latent_size: size of the latent manifold
+        :param dilation: amount of dilation to be used by the 3x3 convs
+                         in the Generator module.
         :param use_spectral_norm: whether to use spectral normalization
         """
         from torch.nn import ModuleList, Conv2d
-        from Teacher.CustomLayers import GenGeneralConvBlock, GenInitialBlock
+        from MSG_GAN.CustomLayers import GenGeneralConvBlock, GenInitialBlock
 
         super().__init__()
 
@@ -33,6 +35,7 @@ class Generator(th.nn.Module):
         self.depth = depth
         self.latent_size = latent_size
         self.spectral_norm_mode = None
+        self.dilation = dilation
 
         # register the modules required for the GAN Below ...
         # create the ToRGB layers for various outputs:
@@ -46,12 +49,14 @@ class Generator(th.nn.Module):
         # create the remaining layers
         for i in range(self.depth - 1):
             if i <= 2:
-                layer = GenGeneralConvBlock(self.latent_size, self.latent_size)
+                layer = GenGeneralConvBlock(self.latent_size, self.latent_size,
+                                            dilation=dilation)
                 rgb = to_rgb(self.latent_size)
             else:
                 layer = GenGeneralConvBlock(
                     int(self.latent_size // np.power(2, i - 3)),
                     int(self.latent_size // np.power(2, i - 2)),
+                    dilation=dilation
                 )
                 rgb = to_rgb(int(self.latent_size // np.power(2, i - 2)))
             self.layers.append(layer)
@@ -119,17 +124,19 @@ class Generator(th.nn.Module):
 class Discriminator(th.nn.Module):
     """ Discriminator of the GAN """
 
-    def __init__(self, depth=7, feature_size=512, use_spectral_norm=True):
+    def __init__(self, depth=7, feature_size=512, dilation=1, use_spectral_norm=True):
         """
         constructor for the class
         :param depth: total depth of the discriminator
                        (Must be equal to the Generator depth)
         :param feature_size: size of the deepest features extracted
                              (Must be equal to Generator latent_size)
+        :param dilation: amount of dilation to be applied to
+                         the 3x3 convolutional blocks of the discriminator
         :param use_spectral_norm: whether to use spectral_normalization
         """
         from torch.nn import ModuleList
-        from Teacher.CustomLayers import DisGeneralConvBlock, DisFinalBlock
+        from MSG_GAN.CustomLayers import DisGeneralConvBlock, DisFinalBlock
         from torch.nn import Conv2d
 
         super().__init__()
@@ -144,6 +151,7 @@ class Discriminator(th.nn.Module):
         self.depth = depth
         self.feature_size = feature_size
         self.spectral_norm_mode = None
+        self.dilation = dilation
 
         # create the fromRGB layers for various inputs:
         def from_rgb(out_channels):
@@ -159,11 +167,13 @@ class Discriminator(th.nn.Module):
             if i > 2:
                 layer = DisGeneralConvBlock(
                     int(self.feature_size // np.power(2, i - 2)),
-                    int(self.feature_size // np.power(2, i - 2))
+                    int(self.feature_size // np.power(2, i - 2)),
+                    dilation=dilation
                 )
                 rgb = from_rgb(int(self.feature_size // np.power(2, i - 1)))
             else:
-                layer = DisGeneralConvBlock(self.feature_size, self.feature_size // 2)
+                layer = DisGeneralConvBlock(self.feature_size, self.feature_size // 2,
+                                            dilation=dilation)
                 rgb = from_rgb(self.feature_size // 2)
 
             self.layers.append(layer)
@@ -238,22 +248,33 @@ class Discriminator(th.nn.Module):
         return y
 
 
-class TeacherGAN:
+class MSG_GAN:
     """ Unconditional TeacherGAN
 
         args:
             depth: depth of the GAN (will be used for each generator and discriminator)
             latent_size: latent size of the manifold used by the GAN
+            gen_dilation: amount of dilation for generator
+            dis_dilation: amount of dilation for discriminator
+            use_spectral_norm: whether to use spectral normalization to the convolutional
+                               blocks.
             device: device to run the GAN on (GPU / CPU)
     """
 
-    def __init__(self, depth=7, latent_size=512, device=th.device("cpu")):
+    def __init__(self, depth=7, latent_size=512, gen_dilation=1,
+                 dis_dilation=1, use_spectral_norm=True, device=th.device("cpu")):
         """ constructor for the class """
         from torch.nn import DataParallel
 
+        self.gen = Generator(depth, latent_size, dilation=gen_dilation,
+                             use_spectral_norm=use_spectral_norm).to(device)
+        self.dis = Discriminator(depth, latent_size, dilation=dis_dilation,
+                                 use_spectral_norm=use_spectral_norm).to(device)
+
         # Create the Generator and the Discriminator
-        self.gen = DataParallel(Generator(depth, latent_size).to(device))
-        self.dis = DataParallel(Discriminator(depth, latent_size).to(device))
+        if device == th.device("cuda"):
+            self.gen = DataParallel(self.gen)
+            self.dis = DataParallel(self.dis)
 
         # state of the object
         self.latent_size = latent_size
@@ -336,12 +357,10 @@ class TeacherGAN:
         """
         from torchvision.utils import save_image
         from numpy import sqrt
-
-        samples = list(map(lambda x: th.clamp((x.detach() / 2) + 0.5, min=0, max=1),
-                           samples))
-
+        
         # save the images:
         for sample, img_file in zip(samples, img_files):
+            sample = th.clamp((sample.detach() / 2) + 0.5, min=0, max=1)
             save_image(sample, img_file, nrow=int(sqrt(sample.shape[0])))
 
     def train(self, data, gen_optim, dis_optim, loss_fn,
@@ -350,7 +369,29 @@ class TeacherGAN:
               log_dir=None, sample_dir="./samples",
               save_dir="./models"):
 
-        # TODO write the documentation for this method
+        # TODOcomplete write the documentation for this method
+        # no more procrastination ... HeHe
+        """
+        Method for training the network
+        :param data: pytorch dataloader which iterates over images
+        :param gen_optim: Optimizer for generator.
+                          please wrap this inside a Scheduler if you want to
+        :param dis_optim: Optimizer for discriminator.
+                          please wrap this inside a Scheduler if you want to
+        :param loss_fn: Object of GANLoss
+        :param start: starting epoch number
+        :param num_epochs: total number of epochs to run for (ending epoch number)
+                           note this is absolute and not relative to start
+        :param feedback_factor: number of logs generated and samples generated
+                                during training per epoch
+        :param checkpoint_factor: save model after these many epochs
+        :param data_percentage: amount of data to be used
+        :param num_samples: number of samples to be drawn for feedback grid
+        :param log_dir: path to directory for saving the loss.log file
+        :param sample_dir: path to directory for saving generated samples' grids
+        :param save_dir: path to directory for saving the trained models
+        :return: None (writes multiple files to disk)
+        """
 
         from torch.nn.functional import avg_pool2d
 
@@ -433,7 +474,10 @@ class TeacherGAN:
                     for gen_img_file in gen_img_files:
                         os.makedirs(os.path.dirname(gen_img_file), exist_ok=True)
 
-                    self.create_grid(self.gen(fixed_input), gen_img_files)
+                    dis_optim.zero_grad()
+                    gen_optim.zero_grad()
+                    with th.no_grad():
+                        self.create_grid(self.gen(fixed_input), gen_img_files)
 
                 if i > limit:
                     break
@@ -446,35 +490,16 @@ class TeacherGAN:
                 os.makedirs(save_dir, exist_ok=True)
                 gen_save_file = os.path.join(save_dir, "GAN_GEN_" + str(epoch) + ".pth")
                 dis_save_file = os.path.join(save_dir, "GAN_DIS_" + str(epoch) + ".pth")
+                gen_optim_save_file = os.path.join(save_dir, "GAN_GEN_OPTIM" + str(epoch) + ".pth")
+                dis_optim_save_file = os.path.join(save_dir, "GAN_DIS_OPTIM" + str(epoch) + ".pth")
 
                 th.save(self.gen.state_dict(), gen_save_file)
                 th.save(self.dis.state_dict(), dis_save_file)
+                th.save(gen_optim.state_dict(), gen_optim_save_file)
+                th.save(dis_optim.state_dict(), dis_optim_save_file)
 
         print("Training completed ...")
 
         # return the generator and discriminator back to eval mode
         self.gen.eval()
         self.dis.eval()
-
-
-# if __name__ == '__main__':
-#     dev = th.device("cuda" if th.cuda.is_available() else "cpu")
-#
-#     # create a generator:
-#     gen = Generator().to(dev)
-#     print(gen)
-#     noise = th.randn(1, gen.latent_size).to(dev)
-#
-#     # obtain the outputs:
-#     samps = gen(noise)
-#
-#     # for samp in samps:
-#     #     plt.imshow(samp.detach()[0].permute(1, 2, 0) / 2 + 0.5)
-#     #     plt.show()
-#
-#     dis = Discriminator().to(dev)
-#     print(dis)
-#
-#     # apply a pass over the discriminator:
-#     preds = dis(*samps)
-#     print(preds)
