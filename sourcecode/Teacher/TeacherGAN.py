@@ -249,10 +249,11 @@ class TeacherGAN:
 
     def __init__(self, depth=7, latent_size=512, device=th.device("cpu")):
         """ constructor for the class """
+        from torch.nn import DataParallel
 
         # Create the Generator and the Discriminator
-        self.gen = Generator(depth, latent_size).to(device)
-        self.dis = Discriminator(depth, latent_size).to(device)
+        self.gen = DataParallel(Generator(depth, latent_size).to(device))
+        self.dis = DataParallel(Discriminator(depth, latent_size).to(device))
 
         # state of the object
         self.latent_size = latent_size

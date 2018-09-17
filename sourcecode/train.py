@@ -5,6 +5,7 @@ import argparse
 import numpy as np
 import torch as th
 from torch.backends import cudnn
+from torchvision.datasets import ImageFolder
 
 # define the device for the training script
 device = th.device("cuda" if th.cuda.is_available() else "cpu")
@@ -105,6 +106,18 @@ def parse_arguments():
     return args
 
 
+class ImageDataset(ImageFolder):
+
+    def __init__(self, *args, **kwargs):
+        """ init call for this derived dataset """
+        super().__init__(*args, **kwargs)
+   
+    def __getitem__(self, idx):
+        """ overridden get_item which ignores the label  """
+        sample, _ = super().__getitem__(idx)
+        return sample
+
+
 def main(args):
     """
     Main function for the script
@@ -112,15 +125,16 @@ def main(args):
     :return: None
     """
     from Teacher.TeacherGAN import TeacherGAN
-    from data_processing.DataLoader import FlatDirectoryImageDataset, \
-        get_transform, get_data_loader
+    from data_processing.DataLoader import get_transform, get_data_loader
     from Teacher.Losses import HingeGAN, RelativisticAverageHingeGAN
 
     # create a data source:
-    celeba_dataset = FlatDirectoryImageDataset(
+    celeba_dataset = ImageDataset(
         args.images_dir,
         transform=get_transform((int(np.power(2, args.depth + 1)),
                                  int(np.power(2, args.depth + 1)))))
+
+    print("Total number of images in the dataset:", len(celeba_dataset))
 
     data = get_data_loader(celeba_dataset, args.batch_size, args.num_workers)
 
