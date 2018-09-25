@@ -93,6 +93,10 @@ training the Networks in an adversarial manner. The loss function used is
 has stayed smooth.
 
 ## Running the Code
+**Please note to use value of `learning_rate=0.0003` for both G and D for all experiments.
+TTUR doesn't work with this architecture (from experience). And, you can find other better 
+learning rates, but the value `0.0003` always seems to work.**
+
 Running the training is actually very simple. 
 Just start the training by running the `train.py` script in the `sourcecode/` 
 directory. Refer to the following parameters for tweaking for your own use:
