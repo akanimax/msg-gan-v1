@@ -1,4 +1,4 @@
-""" script for training a Self Attention GAN on celeba images """
+""" script for training the MSG-GAN on given dataset """
 
 import argparse
 
