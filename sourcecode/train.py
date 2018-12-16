@@ -1,4 +1,4 @@
-""" script for training a Self Attention GAN on celeba images """
+""" script for training the MSG-GAN on given dataset """
 
 import argparse
 
@@ -155,6 +155,7 @@ def main(args):
                                  int(np.power(2, args.depth + 1)))))
 
     data = get_data_loader(dataset, args.batch_size, args.num_workers)
+    print("Total number of images in the dataset:", len(dataset))
 
     # create a gan from these
     msg_gan = MSG_GAN(depth=args.depth,
