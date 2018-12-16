@@ -27,13 +27,25 @@ def parse_arguments():
                         default=None,
                         help="pretrained weights file for generator")
 
+    parser.add_argument("--generator_optim_file", action="store", type=str,
+                        default=None,
+                        help="saved state for generator optimizer")
+
     parser.add_argument("--discriminator_file", action="store", type=str,
                         default=None,
                         help="pretrained_weights file for discriminator")
 
+    parser.add_argument("--discriminator_optim_file", action="store", type=str,
+                        default=None,
+                        help="saved state for discriminator optimizer")
+
     parser.add_argument("--images_dir", action="store", type=str,
                         default="../data/celeba",
                         help="path for the images directory")
+
+    parser.add_argument("--folder_distributed", action="store", type=bool,
+                        default=False,
+                        help="whether the images directory contains folders or not")
 
     parser.add_argument("--sample_dir", action="store", type=str,
                         default="samples/1/",
@@ -97,11 +109,11 @@ def parse_arguments():
                         help="learning rate for discriminator")
 
     parser.add_argument("--adam_beta1", action="store", type=float,
-                        default=0.9,
+                        default=0,
                         help="value of beta_1 for adam optimizer")
 
     parser.add_argument("--adam_beta2", action="store", type=float,
-                        default=0.999,
+                        default=0.99,
                         help="value of beta_2 for adam optimizer")
 
     parser.add_argument("--use_spectral_norm", action="store", type=bool,
@@ -129,17 +141,20 @@ def main(args):
     """
     from MSG_GAN.GAN import MSG_GAN
     from data_processing.DataLoader import FlatDirectoryImageDataset, \
-        get_transform, get_data_loader
+        get_transform, get_data_loader, FoldersDistributedDataset
     from MSG_GAN.Losses import HingeGAN, RelativisticAverageHingeGAN, \
         StandardGAN, LSGAN
 
     # create a data source:
-    celeba_dataset = FlatDirectoryImageDataset(
+    data_source = FlatDirectoryImageDataset if not args.folder_distributed \
+        else FoldersDistributedDataset
+
+    dataset = data_source(
         args.images_dir,
         transform=get_transform((int(np.power(2, args.depth + 1)),
                                  int(np.power(2, args.depth + 1)))))
 
-    data = get_data_loader(celeba_dataset, args.batch_size, args.num_workers)
+    data = get_data_loader(dataset, args.batch_size, args.num_workers)
 
     # create a gan from these
     msg_gan = MSG_GAN(depth=args.depth,
@@ -169,6 +184,12 @@ def main(args):
 
     dis_optim = th.optim.Adam(msg_gan.dis.parameters(), args.d_lr,
                               [args.adam_beta1, args.adam_beta2])
+
+    if args.generator_optim_file is not None:
+        gen_optim.load_state_dict(th.load(args.generator_optim_file))
+
+    if args.discriminator_optim_file is not None:
+        dis_optim.load_state_dict(th.load(args.discriminator_optim_file))
 
     loss_name = args.loss_function.lower()
 

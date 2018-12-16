@@ -490,9 +490,15 @@ class MSG_GAN:
                 os.makedirs(save_dir, exist_ok=True)
                 gen_save_file = os.path.join(save_dir, "GAN_GEN_" + str(epoch) + ".pth")
                 dis_save_file = os.path.join(save_dir, "GAN_DIS_" + str(epoch) + ".pth")
+                gen_optim_save_file = os.path.join(save_dir,
+                                                   "GAN_GEN_OPTIM_" + str(epoch) + ".pth")
+                dis_optim_save_file = os.path.join(save_dir,
+                                                   "GAN_DIS_OPTIM_" + str(epoch) + ".pth")
 
                 th.save(self.gen.state_dict(), gen_save_file)
                 th.save(self.dis.state_dict(), dis_save_file)
+                th.save(gen_optim.state_dict(), gen_optim_save_file)
+                th.save(dis_optim.state_dict(), dis_optim_save_file)
 
         print("Training completed ...")
 

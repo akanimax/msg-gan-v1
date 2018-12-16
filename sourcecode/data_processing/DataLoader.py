@@ -131,8 +131,10 @@ class FoldersDistributedDataset(Dataset):
         if self.transform is not None:
             img = self.transform(img)
 
-        # convert the black and white image to RGB:
-        img = img.expand(3, -1, -1)
+        if img.shape[0] == 4:
+            # ignore the alpha channel
+            # in the image if it exists
+            img = img[:3, :, :]
 
         # return the image:
         return img
