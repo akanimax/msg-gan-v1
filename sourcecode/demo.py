@@ -23,7 +23,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--generator_file", action="store", type=str,
-                        default="models/Celeba/3/GAN_GEN_5.pth",
+                        default="models/Celeba/3/GAN_GEN_3.pth",
                         help="pretrained weights file for generator")
 
     parser.add_argument("--output_dir", action="store", type=str,
@@ -58,7 +58,7 @@ def main(args):
     :param args: parsed command line arguments
     :return: None
     """
-    from MSG_GAN.TeacherGAN import Generator, TeacherGAN
+    from MSG_GAN.GAN import Generator, MSG_GAN
     from torch.nn import DataParallel
 
     # create a generator:
@@ -95,7 +95,7 @@ def main(args):
         file_names.append(file_name)
 
     images = list(map(lambda x: th.cat(x, dim=0), zip(*samples)))
-    TeacherGAN.create_grid(images, file_names)
+    MSG_GAN.create_grid(images, file_names)
 
     print("samples have been generated. Please check:", args.output_dir)
 
