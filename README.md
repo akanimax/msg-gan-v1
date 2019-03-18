@@ -1,3 +1,5 @@
+# **Please note that this is not the repo for the MSG-GAN research paper. The code for the paper titled BMSG-GAN will be released soon. 
+
 # MSG-GAN
 **MSG-GAN (Multi-Scale Gradients GAN)**: A Network architecture inspired from the [ProGAN](https://arxiv.org/pdf/1710.10196.pdf).
 
