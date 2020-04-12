@@ -1,4 +1,4 @@
-# **Please note that this is not the repo for the MSG-GAN research paper. The code for the paper titled BMSG-GAN will be released soon. 
+# **Please note that this is not the repo for the MSG-GAN research paper. Please head over to the [msg-stylegan-tf](https://github.com/akanimax/msg-stylegan-tf) repository for the official code for the [MSG-GAN](https://arxiv.org/abs/1903.06048) paper
 
 # MSG-GAN
 **MSG-GAN (Multi-Scale Gradients GAN)**: A Network architecture inspired from the [ProGAN](https://arxiv.org/pdf/1710.10196.pdf).
